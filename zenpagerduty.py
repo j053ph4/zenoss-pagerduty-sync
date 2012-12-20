@@ -132,6 +132,8 @@ class Main():
             self.statusDict[evid]["current"] = "ack"
         elif status == 2:
             self.statusDict[evid]["current"] = "close"
+        
+        return status
 
     def createPagerDutyIncident(self):
         """
@@ -147,30 +149,35 @@ class Main():
             a) if acked in Zenoss, ack in PagerDuty
             b) if closed in Zenoss, resolve in PagerDuty
         """
-        self.createIncidentDetails(self.options.evid)
-        # first find the appropriate PD service definition
-        service = self.pagerduty.findService(self.options.servicekey)
-        if service:
-             # in maintenance, so ack the zenoss alert but note the window detail
-            if self.pagerduty.inMaintenance(service) == True:
-                self.statusDict[self.options.evid]["target"] = "ack"
-                mws = self.getMaintenanceWindows(service) 
-                for mw in mws:
-                    self.messenger.serviceInMaintenance(self.options.evid, "Acknowledged", service, mw, self.pagerduty.weburl)
-
-            # disabled, so leave event unacked in Zenoss, but that service is disabled    
-            elif self.pagerduty.isDisabled(service) == True: 
-                self.messenger.serviceIsDisabled(self.options.evid, "No Incident created", service, self.lastDisabled(service), self.pagerduty.weburl)
-            else: # assuming service is enabled, create PD incident, note output in zenoss event console.
-                output = self.pagerduty.manageIncident(self.incidentData,"trigger")
+        status = self.createIncidentDetails(self.options.evid)
+        
+        if status == 0:
+            # first find the appropriate PD service definition
+            service = self.pagerduty.findService(self.options.servicekey)
+            if service:
+                 # in maintenance, so ack the zenoss alert but note the window detail
+                if self.pagerduty.inMaintenance(service) == True:
+                    self.statusDict[self.options.evid]["target"] = "ack"
+                    mws = self.getMaintenanceWindows(service) 
+                    for mw in mws:
+                        self.messenger.serviceInMaintenance(self.options.evid, "Acknowledged", service, mw, self.pagerduty.weburl)
+    
+                # disabled, so leave event unacked in Zenoss, but that service is disabled    
+                elif self.pagerduty.isDisabled(service) == True: 
+                    self.messenger.serviceIsDisabled(self.options.evid, "No Incident created", service, self.lastDisabled(service), self.pagerduty.weburl)
                 
-                try:
-                    self.messenger.serviceIncidentCreated(self.options.evid, service, self.pagerduty.weburl, output["errors"])
-                except KeyError:
-                    self.messenger.serviceIncidentCreated(self.options.evid, service, self.pagerduty.weburl)
-
+                # assuming service is enabled, create PD incident, note output in zenoss event console.
+                else: 
+                    output = self.pagerduty.manageIncident(self.incidentData,"trigger")
+                    try:
+                        self.messenger.serviceIncidentCreated(self.options.evid, service, self.pagerduty.weburl, output["errors"])
+                    except KeyError:
+                        self.messenger.serviceIncidentCreated(self.options.evid, service, self.pagerduty.weburl)
+    
+            else:
+                self.messenger.serviceNotFound(self.options.evid, self.options.servicekey)
         else:
-            self.messenger.serviceNotFound(self.options.evid, self.options.servicekey)
+           self.statusDict[self.options.evid]["target"] = self.statusDict[self.options.evid]["current"]
          
     def correlateByZenoss(self):
         """
