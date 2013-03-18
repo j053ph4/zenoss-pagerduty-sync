@@ -20,6 +20,18 @@ PAGERDUTY_SERVICEKEY = ''
 PAGERDUTY_USER = ''
 
 
+ZENOSS_HOST = 'fpmon001.na.atxglobal.com'
+ZENOSS_USERNAME = 'admin'
+ZENOSS_PASSWORD = 'z3n055'
+EVID = 'baf0c32b-6f97-472e-8017-d3d987b266eb'
+
+PAGERDUTY_TOKEN = 'Z2FMKyrbF1xdSUPVDisL'
+PAGERDUTY_HOST = 'agero.pagerduty.com'
+PAGERDUTY_SERVICE  = 'PJ9LKSP'
+PAGERDUTY_SERVICEKEY = '552ff32011800130648822000af81c0e'
+PAGERDUTY_USER = "PFX83CI"
+
+
         
     
 class Main():
@@ -243,7 +255,7 @@ class Main():
         """
         if self.options.verbose == True:
             print "COMPARING EVENT AND INCIDENT FOR ID:%s" % event["evid"]
-
+            
         evupdated = None
         evdetails = details = self.zenoss.getEventDetails(event["evid"])["result"]["event"][0]["properties"]
         for e in evdetails:
@@ -255,6 +267,10 @@ class Main():
         zt = self.messenger.getZenossTime(eupdated)
         pt = self.messenger.getUTCTime(iupdated)
         
+        if self.options.verbose == True:
+            print "COMPARING zenoss time %s and pagerduty time %s" % (eupdated,iupdated)
+            print "COMPARING zenoss time %s and pagerduty time %s" % (zt,pt)
+            
         zentime = self.messenger.getTimestamp(zt)
         pdtime = self.messenger.getTimestamp(pt)
         

@@ -84,6 +84,20 @@ class ZenossHandler():
                 'evid': evid,
                 }
         return self.request('EventsRouter','detail',[data])
+    
+    def addLocation(self,path,id,description=None,address=None):
+        """
+            manage event open/close/acknowledge status
+        """
+        data = {
+                'type': 'organizer',
+                'contextUid:': path,
+                'id': id,
+                'description': description,
+                'address': address,
+                }
+        print "data",data
+        return self.request('DeviceRouter','addLocationNode',[data])
+      
+    
 
-    def getDevices(self, deviceClass='/zport/dmd/Devices/Server/Linux'):
-        return self.request('DeviceRouter', 'getDevices', data=[{'uid': deviceClass, 'params': {} }])["result"]

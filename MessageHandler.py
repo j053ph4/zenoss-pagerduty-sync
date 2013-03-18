@@ -65,8 +65,11 @@ class MessageHandler():
             reformat incident log data
         """
         for d in logs:
-            created = self.getLocalTime(d["created_at"])
+            created = self.getUTCTime(d["created_at"])
             type = d["type"]
+            if type == "annotate":
+                url = "<a href=\"%s%s\">%s</a>" % (baseurl,d["agent"]["user_url"],d["agent"]["name"])
+                self.messages[id].append("%s: %s Remarked: %s" % (created,url,d['channel']['summary']))
             if type == "notify":
                 self.messages[id].append("%s: Notification %s via %s to %s " % (created,
                                                                                 d["notification"]["status"],
